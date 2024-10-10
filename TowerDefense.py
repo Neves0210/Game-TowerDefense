@@ -1,6 +1,9 @@
+import tkinter as tk
+from tkinter import messagebox
 import heapq
-import copy
+import random
 
+# Definição da classe JogoTowerDefense
 class Torre:
     def __init__(self, dano=10):
         self.dano = dano
@@ -10,6 +13,7 @@ class JogoTowerDefense:
         self.n = n
         self.tabuleiro = self.criar_tabuleiro(n)
         self.torres = []
+        self.matriz_dano = [[0 for _ in range(n)] for _ in range(n)]
 
     def criar_tabuleiro(self, n):
         return [[0 for _ in range(n)] for _ in range(n)]
@@ -18,33 +22,12 @@ class JogoTowerDefense:
         if 0 <= x < self.n and 0 <= y < self.n:
             self.tabuleiro[x][y] = 1
             self.torres.append((x, y, Torre()))
+            self.calcular_dano_ao_adicionar_torre(x, y)
 
-    def copiar_estado_jogo(self):
-        return copy.deepcopy(self)
-
-    @staticmethod
-    def carregar_de_arquivo(nome_arquivo):
-        with open(nome_arquivo, 'r') as arquivo:
-            linhas = arquivo.readlines()
-        
-        n = int(linhas[0].strip())
-        jogo = JogoTowerDefense(n)
-
-        for i, linha in enumerate(linhas[1:]):
-            for j, caractere in enumerate(linha.strip()):
-                if caractere == 'T':
-                    jogo.adicionar_torre(i, j)
-
-        return jogo
-
-    def calcular_dano(self, x, y):
-        dano = 0
-        for i in range(self.n):
-            for j in range(self.n):
-                if self.tabuleiro[i][j] == 1:
-                    if abs(i - x) <= 1 and abs(j - y) <= 1:
-                        dano += 10
-        return dano
+    def calcular_dano_ao_adicionar_torre(self, x, y):
+        for i in range(max(0, x-1), min(self.n, x+2)):
+            for j in range(max(0, y-1), min(self.n, y+2)):
+                self.matriz_dano[i][j] += 10
 
     def encontrar_menor_dano(self):
         n = self.n
@@ -64,11 +47,8 @@ class JogoTowerDefense:
             
             for dx, dy in movimentos:
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < n and 0 <= ny < n:
-                    if self.tabuleiro[nx][ny] == 1:
-                        continue
-                    dano = self.calcular_dano(nx, ny)
-                    novo_custo = custo_atual + dano
+                if 0 <= nx < n and 0 <= ny < n and self.tabuleiro[nx][ny] != 1:
+                    novo_custo = custo_atual + self.matriz_dano[nx][ny]
                     if (nx, ny) not in distancias or novo_custo < distancias[(nx, ny)]:
                         distancias[(nx, ny)] = novo_custo
                         heapq.heappush(heap, (novo_custo, (nx, ny)))
@@ -99,30 +79,119 @@ class JogoTowerDefense:
                 direcoes.append("Oeste")
         return direcoes
 
-    def salvar_direcoes(self, nome_arquivo, direcoes):
-        with open(nome_arquivo, 'w') as arquivo:
-            for direcao in direcoes:
-                arquivo.writelines(direcao + "\n")
+# Interface com Tkinter
+class TowerDefenseInterface:
+    def __init__(self, root):
+        self.root = root
+        self.n = 10
+        self.torres_aleatorias = 10
+        self.jogo = None
+        self.botao_matriz = None
+        self.criar_configuracao_inicial()
 
-jogo = JogoTowerDefense.carregar_de_arquivo('inst2.in')
+    def criar_configuracao_inicial(self):
+        frame_config = tk.Frame(self.root)
+        frame_config.grid(row=0, column=0)
 
-menor_dano, melhor_caminho = jogo.encontrar_menor_dano()
+        # Entrada para o tamanho do tabuleiro
+        tk.Label(frame_config, text="Tamanho do Tabuleiro:").grid(row=0, column=0)
+        self.tamanho_input = tk.Entry(frame_config)
+        self.tamanho_input.grid(row=0, column=1)
+        self.tamanho_input.insert(0, "10")  # Valor padrão
 
-direcoes = jogo.converter_para_direcoes(melhor_caminho)
+        # Entrada para o número de torres
+        tk.Label(frame_config, text="Número de Torres:").grid(row=1, column=0)
+        self.torres_input = tk.Entry(frame_config)
+        self.torres_input.grid(row=1, column=1)
+        self.torres_input.insert(0, "10")  # Valor padrão
 
-jogo.salvar_direcoes('sol.out', direcoes)
+        # Botão para iniciar o jogo com as configurações escolhidas
+        botao_iniciar = tk.Button(frame_config, text="Iniciar Jogo", command=self.iniciar_jogo)
+        botao_iniciar.grid(row=2, column=0, columnspan=2)
 
-print("Menor Dano:", menor_dano)
-print("Melhor Caminho:", melhor_caminho)
+    def iniciar_jogo(self):
+        try:
+            self.n = int(self.tamanho_input.get())
+            self.torres_aleatorias = int(self.torres_input.get())
+            self.jogo = JogoTowerDefense(self.n)
+            self.criar_tabuleiro()
+            self.gerar_tabuleiro_aleatorio()
+        except ValueError:
+            messagebox.showerror("Erro", "Por favor, insira valores válidos para o tamanho do tabuleiro e o número de torres.")
 
-print("Tabuleiro com Caminho:")
-for i in range(jogo.n):
-    linha = ""
-    for j in range(jogo.n):
-        if (i, j) in melhor_caminho:
-            linha += "- "
-        elif jogo.tabuleiro[i][j] == 1:
-            linha += "T "
+    def criar_tabuleiro(self):
+        frame_tabuleiro = tk.Frame(self.root)
+        frame_tabuleiro.grid(row=1, column=0)
+
+        # Criar botões para cada célula do tabuleiro
+        self.botao_matriz = [[None for _ in range(self.n)] for _ in range(self.n)]
+        for i in range(self.n):
+            for j in range(self.n):
+                botao = tk.Button(frame_tabuleiro, text="0", width=3, height=2, 
+                                  command=lambda x=i, y=j: self.adicionar_torre(x, y))
+                botao.grid(row=i, column=j)
+                self.botao_matriz[i][j] = botao
+
+        # Botão para encontrar o menor dano
+        botao_calcular = tk.Button(self.root, text="Calcular Menor Dano", command=self.encontrar_menor_dano)
+        botao_calcular.grid(row=2, column=0)
+
+    def adicionar_torre(self, x, y):
+        if self.jogo.tabuleiro[x][y] == 0:
+            self.jogo.adicionar_torre(x, y)
+            self.botao_matriz[x][y].config(text="T", bg="red")
         else:
-            linha += "0 "
-    print(linha.strip())
+            self.jogo.tabuleiro[x][y] = 0
+            self.botao_matriz[x][y].config(text="0", bg="SystemButtonFace")
+
+    def gerar_tabuleiro_aleatorio(self):
+        # Limpa o tabuleiro
+        for i in range(self.n):
+            for j in range(self.n):
+                self.jogo.tabuleiro[i][j] = 0
+                self.botao_matriz[i][j].config(text="0", bg="SystemButtonFace")
+
+        # Adiciona torres aleatórias conforme a quantidade especificada pelo usuário
+        torres_adicionadas = 0
+        while torres_adicionadas < self.torres_aleatorias:
+            x = random.randint(0, self.n - 1)
+            y = random.randint(0, self.n - 1)
+
+            # Verifica se a posição (x, y) é (n, n) ou (n-1, n-1) antes de adicionar uma torre
+            if self.jogo.tabuleiro[x][y] == 0 and not ((x == self.n - 1 and y == self.n - 1) or (x == self.n - 2 and y == self.n - 2)):
+                self.jogo.adicionar_torre(x, y)
+                self.botao_matriz[x][y].config(text="T", bg="red")
+                torres_adicionadas += 1
+        
+    # def gerar_tabuleiro_aleatorio(self):
+    #     # Limpa o tabuleiro
+    #     for i in range(self.n):
+    #         for j in range(self.n):
+    #             self.jogo.tabuleiro[i][j] = 0
+    #             self.botao_matriz[i][j].config(text="0", bg="SystemButtonFace")
+
+    #     # Adiciona torres aleatórias conforme a quantidade especificada pelo usuário
+    #     torres_adicionadas = 0
+    #     while torres_adicionadas < self.torres_aleatorias:
+    #         x = random.randint(0, self.n - 1)
+    #         y = random.randint(0, self.n - 1)
+    #         if self.jogo.tabuleiro[x][y] == 0:
+    #             self.jogo.adicionar_torre(x, y)
+    #             self.botao_matriz[x][y].config(text="T", bg="red")
+    #             torres_adicionadas += 1
+
+    def encontrar_menor_dano(self):
+        try:
+            menor_dano, melhor_caminho = self.jogo.encontrar_menor_dano()
+            for x, y in melhor_caminho:
+                # Mostra o valor do dano na célula do caminho
+                self.botao_matriz[x][y].config(bg="green", text=f"D: {self.jogo.matriz_dano[x][y]}")
+            messagebox.showinfo("Resultado", f"Menor Dano: {menor_dano}")
+        except KeyError:
+            messagebox.showerror("Erro", "Caminho não encontrado")
+
+# Inicializando a interface
+root = tk.Tk()
+root.title("Jogo Tower Defense")
+app = TowerDefenseInterface(root)
+root.mainloop()
