@@ -19,6 +19,7 @@ class JogoTowerDefense:
         return [[0 for _ in range(n)] for _ in range(n)]
 
     def adicionar_torre(self, x, y):
+        # Corrigido para usar self.tabuleiro
         if 0 <= x < self.n and 0 <= y < self.n:
             self.tabuleiro[x][y] = 1
             self.torres.append((x, y, Torre()))
@@ -28,6 +29,36 @@ class JogoTowerDefense:
         for i in range(max(0, x-1), min(self.n, x+2)):
             for j in range(max(0, y-1), min(self.n, y+2)):
                 self.matriz_dano[i][j] += 10
+
+    # ... o restante da classe permanece o mesmo ...
+
+
+    # def encontrar_menor_dano(self):
+    #     n = self.n
+    #     inicio = (0, 0)
+    #     fim = (n-1, n-1)
+    #     movimentos = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        
+    #     heap = [(0, inicio)]
+    #     distancias = {inicio: 0}
+    #     caminho = {inicio: None}
+        
+    #     while heap:
+    #         custo_atual, (x, y) = heapq.heappop(heap)
+            
+    #         if (x, y) == fim:
+    #             break
+            
+    #         for dx, dy in movimentos:
+    #             nx, ny = x + dx, y + dy
+    #             if 0 <= nx < n and 0 <= ny < n and self.tabuleiro[nx][ny] != 1:
+    #                 novo_custo = custo_atual + self.matriz_dano[nx][ny]
+    #                 if (nx, ny) not in distancias or novo_custo < distancias[(nx, ny)]:
+    #                     distancias[(nx, ny)] = novo_custo
+    #                     heapq.heappush(heap, (novo_custo, (nx, ny)))
+    #                     caminho[(nx, ny)] = (x, y)
+        
+    #     return distancias[fim], self.reconstruir_caminho(caminho, fim)
 
     def encontrar_menor_dano(self):
         n = self.n
@@ -55,7 +86,7 @@ class JogoTowerDefense:
                         caminho[(nx, ny)] = (x, y)
         
         return distancias[fim], self.reconstruir_caminho(caminho, fim)
-    
+        
     def reconstruir_caminho(self, caminho, fim):
         caminho_reverso = []
         atual = fim
@@ -157,12 +188,15 @@ class TowerDefenseInterface:
             x = random.randint(0, self.n - 1)
             y = random.randint(0, self.n - 1)
 
-            # Verifica se a posição (x, y) é (n, n) ou (n-1, n-1) antes de adicionar uma torre
-            if self.jogo.tabuleiro[x][y] == 0 and not ((x == self.n - 1 and y == self.n - 1) or (x == self.n - 2 and y == self.n - 2)):
+            # Impedir torres nas casas (n-1, n-1) e (n, n)
+            if (x == self.n - 1 and y == self.n - 1) or (x == self.n - 2 and y == self.n - 2):
+                continue
+
+            if self.jogo.tabuleiro[x][y] == 0:
                 self.jogo.adicionar_torre(x, y)
                 self.botao_matriz[x][y].config(text="T", bg="red")
                 torres_adicionadas += 1
-        
+
     # def gerar_tabuleiro_aleatorio(self):
     #     # Limpa o tabuleiro
     #     for i in range(self.n):
@@ -184,8 +218,12 @@ class TowerDefenseInterface:
         try:
             menor_dano, melhor_caminho = self.jogo.encontrar_menor_dano()
             for x, y in melhor_caminho:
-                # Mostra o valor do dano na célula do caminho
-                self.botao_matriz[x][y].config(bg="green", text=f"D: {self.jogo.matriz_dano[x][y]}")
+                # Não mostre o valor do dano na casa (0, 0)
+                if x == 0 and y == 0:
+                    self.botao_matriz[x][y].config(bg="green", text="Início")
+                else:
+                    # Mostra o valor do dano na célula do caminho
+                    self.botao_matriz[x][y].config(bg="green", text=f"D: {self.jogo.matriz_dano[x][y]}")
             messagebox.showinfo("Resultado", f"Menor Dano: {menor_dano}")
         except KeyError:
             messagebox.showerror("Erro", "Caminho não encontrado")
