@@ -1,88 +1,93 @@
-# Game-TowerDefense
+# Jogo Tower Defense - README
 
-Este projeto implementa um jogo de Tower Defense em Python, onde o objetivo é encontrar o caminho de menor dano em um tabuleiro quadrado com torres. A classe principal, `JogoTowerDefense`, gerencia o tabuleiro, a adição de torres e o cálculo do menor caminho para se deslocar do ponto inicial ao ponto final, evitando ou minimizando o dano causado pelas torres.
+## Descrição do Projeto
+Este projeto implementa um jogo simples de **Tower Defense** utilizando a biblioteca **Tkinter** para criar uma interface gráfica em Python. O jogador pode adicionar torres defensivas em um tabuleiro e tentar encontrar o caminho com menor dano entre o ponto inicial (0,0) e o ponto final (n-1, n-1). O jogo calcula o dano das torres em torno delas e utiliza um algoritmo de Dijkstra para determinar o melhor caminho a ser seguido.
 
 ## Funcionalidades
 
-1. **Criação do Tabuleiro**: Um tabuleiro quadrado de tamanho `n x n` é criado, onde o jogador pode posicionar torres em diferentes posições.
+- **Criação do Tabuleiro**: Permite ao usuário definir o tamanho do tabuleiro.
+- **Adição de Torres**: As torres podem ser adicionadas manualmente clicando nas células ou aleatoriamente.
+- **Cálculo do Menor Dano**: O jogo calcula o caminho com o menor dano possível entre o ponto de partida e o ponto final.
+- **Exibição do Caminho Ótimo**: O caminho de menor dano é destacado visualmente no tabuleiro.
 
-2. **Adição de Torres**: Torres podem ser adicionadas ao tabuleiro com coordenadas específicas, e cada torre possui um valor de dano.
+## Estrutura do Código
 
-3. **Cálculo de Dano**: A função `calcular_dano` determina o dano total que uma unidade sofre ao passar por uma posição específica do tabuleiro, levando em conta a proximidade das torres.
+### 1. **Classe `Torre`**
+Define uma torre com o atributo `dano`, que representa a quantidade de dano que a torre causa nas células adjacentes.
 
-4. **Algoritmo de Menor Caminho**: Utilizando uma variação do algoritmo A*, o método `encontrar_menor_dano` encontra o caminho com o menor dano entre o ponto inicial (0,0) e o ponto final (`n-1, n-1`).
+### 2. **Classe `JogoTowerDefense`**
+Gerencia o tabuleiro do jogo, as torres e o cálculo de danos. Também implementa o algoritmo de Dijkstra para encontrar o caminho com menor dano.
 
-5. **Conversão de Caminho para Direções**: O caminho gerado é convertido em direções simples (Norte, Sul, Leste, Oeste) para facilitar a visualização do trajeto.
+- **Métodos principais**:
+  - `criar_tabuleiro(n)`: Cria um tabuleiro vazio de tamanho `n x n`.
+  - `adicionar_torre(x, y)`: Adiciona uma torre em uma posição especificada.
+  - `calcular_dano_ao_adicionar_torre(x, y)`: Atualiza o valor de dano nas células ao redor de uma torre.
+  - `encontrar_menor_dano()`: Usa o algoritmo de Dijkstra para encontrar o caminho de menor dano entre o ponto inicial e o final.
+  - `reconstruir_caminho()`: Reconstrói o caminho encontrado pelo algoritmo de Dijkstra.
 
-6. **Carregamento e Salvamento de Arquivos**: O tabuleiro pode ser carregado a partir de um arquivo de texto (`.in`), e as direções do melhor caminho podem ser salvas em um arquivo de saída (`.out`).
+### 3. **Classe `TowerDefenseInterface`**
+Implementa a interface gráfica do jogo utilizando **Tkinter**. Permite ao usuário configurar o jogo e interagir com o tabuleiro.
 
-## Como Utilizar
+- **Métodos principais**:
+  - `criar_configuracao_inicial()`: Define a interface para a configuração inicial do tamanho do tabuleiro e número de torres.
+  - `iniciar_jogo()`: Inicia o jogo com os parâmetros configurados pelo usuário.
+  - `adicionar_torre(x, y)`: Permite ao jogador adicionar ou remover torres manualmente.
+  - `encontrar_menor_dano()`: Calcula e exibe o caminho com menor dano no tabuleiro.
 
-1. **Carregar o Tabuleiro**:
-   O tabuleiro e a posição das torres são carregados a partir de um arquivo de texto de entrada. O arquivo deve seguir o formato:
-   
-   ```
-   n
-   linha1
-   linha2
-   ...
-   ```
-   Onde `n` é o tamanho do tabuleiro e cada linha subsequente indica a presença de torres (`T`) ou espaços vazios (`0`).
+### 4. **Interface Gráfica com Tkinter**
+A interface gráfica oferece:
+- Entradas de texto para o tamanho do tabuleiro e o número de torres.
+- Botões para iniciar o jogo, adicionar torres, gerar torres aleatoriamente e calcular o menor dano.
+- Exibição visual do tabuleiro, onde cada célula é representada por um botão.
 
-2. **Encontrar o Melhor Caminho**:
-   Após carregar o tabuleiro, o jogo busca o caminho com o menor dano, imprimindo o dano mínimo e o caminho encontrado.
+## Como Executar
 
-3. **Salvar Direções**:
-   As direções (Norte, Sul, Leste, Oeste) do melhor caminho são salvas em um arquivo de saída.
+### Pré-requisitos
+- **Python 3.x**
+- **Tkinter** (incluso no Python padrão)
 
-## Exemplo de Execução
+### Passos para Execução
 
-1. **Carregar o jogo**:
-   ```python
-   jogo = JogoTowerDefense.carregar_de_arquivo('inst2.in')
-   ```
-
-2. **Encontrar o menor dano**:
-   ```python
-   menor_dano, melhor_caminho = jogo.encontrar_menor_dano()
-   ```
-
-3. **Converter para direções e salvar**:
-   ```python
-   direcoes = jogo.converter_para_direcoes(melhor_caminho)
-   jogo.salvar_direcoes('sol.out', direcoes)
-   ```
-
-4. **Imprimir resultados**:
-   ```python
-   print("Menor Dano:", menor_dano)
-   print("Melhor Caminho:", melhor_caminho)
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/seu-usuario/seu-repositorio.git
    ```
 
-5. **Exibir o tabuleiro com o caminho**:
-   O tabuleiro é impresso no console com o melhor caminho marcado por `-` e as torres marcadas por `T`.
+2. Acesse o diretório do projeto:
+   ```bash
+   cd seu-repositorio
+   ```
 
-## Requisitos
+3. Execute o jogo:
+   ```bash
+   python main.py
+   ```
 
-- Python 3.x
-- Biblioteca `heapq` para a implementação do algoritmo de busca de menor caminho.
-- Biblioteca `copy` para realizar cópias profundas do estado do jogo.
+4. A interface gráfica será aberta. Defina o tamanho do tabuleiro e o número de torres.
 
-## Exemplo de Arquivo de Entrada (inst2.in)
+5. Clique em **Iniciar Jogo** para criar o tabuleiro.
 
-```
-5
-T000T
-00000
-00000
-T000T
-00000
-```
+6. Adicione torres clicando nas células ou deixe o jogo gerar torres aleatoriamente.
 
-## Contribuição
+7. Clique em **Calcular Menor Dano** para encontrar o caminho ótimo e ver o dano total.
 
-Sinta-se à vontade para contribuir com melhorias no código, otimizações ou novas funcionalidades.
+## Personalização
+
+- **Tamanho do Tabuleiro**: O usuário pode definir o tamanho do tabuleiro (padrão 10x10).
+- **Número de Torres**: O usuário pode definir a quantidade de torres (padrão 10).
+
+## Melhorias Futuras
+
+- Adicionar diferentes tipos de torres com diferentes alcances e níveis de dano.
+- Implementar inimigos que se movem pelo tabuleiro.
+- Adicionar níveis de dificuldade e temporizadores.
+- Melhorar a interface gráfica com animações e temas visuais.
 
 ## Licença
 
-Este projeto está sob a licença MIT.
+Este projeto está licenciado sob a [MIT License](LICENSE).
+
+---
+
+> Desenvolvido por [Gabriel Neves](https://github.com/Neves0210). Contribuições são bem-vindas!
+

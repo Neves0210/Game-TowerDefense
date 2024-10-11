@@ -118,6 +118,7 @@ class TowerDefenseInterface:
         self.torres_aleatorias = 10
         self.jogo = None
         self.botao_matriz = None
+        self.frame_tabuleiro = None  # Adicionei para rastrear o frame do tabuleiro
         self.criar_configuracao_inicial()
 
     def criar_configuracao_inicial(self):
@@ -145,21 +146,35 @@ class TowerDefenseInterface:
             self.n = int(self.tamanho_input.get())
             self.torres_aleatorias = int(self.torres_input.get())
             self.jogo = JogoTowerDefense(self.n)
+            
+            # Limpa o tabuleiro anterior
+            self.limpar_tabuleiro()
+            
+            # Cria o novo tabuleiro
             self.criar_tabuleiro()
             self.gerar_tabuleiro_aleatorio()
         except ValueError:
             messagebox.showerror("Erro", "Por favor, insira valores válidos para o tamanho do tabuleiro e o número de torres.")
 
+    def limpar_tabuleiro(self):
+        # Remove o frame do tabuleiro anterior se existir
+        if self.frame_tabuleiro is not None:
+            self.frame_tabuleiro.destroy()
+
     def criar_tabuleiro(self):
-        frame_tabuleiro = tk.Frame(self.root)
-        frame_tabuleiro.grid(row=1, column=0)
+        # Cria um novo frame para o tabuleiro
+        self.frame_tabuleiro = tk.Frame(self.root)
+        self.frame_tabuleiro.grid(row=1, column=0)
 
         # Criar botões para cada célula do tabuleiro
         self.botao_matriz = [[None for _ in range(self.n)] for _ in range(self.n)]
         for i in range(self.n):
             for j in range(self.n):
-                botao = tk.Button(frame_tabuleiro, text="0", width=3, height=2, 
-                                  command=lambda x=i, y=j: self.adicionar_torre(x, y))
+                if (i, j) == (self.n - 1, self.n - 1):  # Definir a última casa como "Fim"
+                    botao = tk.Button(self.frame_tabuleiro, text="Fim", width=3, height=2)
+                else:
+                    botao = tk.Button(self.frame_tabuleiro, text="0", width=3, height=2, 
+                                      command=lambda x=i, y=j: self.adicionar_torre(x, y))
                 botao.grid(row=i, column=j)
                 self.botao_matriz[i][j] = botao
 
