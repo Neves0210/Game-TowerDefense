@@ -90,28 +90,36 @@ class TowerDefenseInterface:
         self.torres_aleatorias = 10
         self.jogo = None
         self.botao_matriz = None
+        self.canvas = None  # Adiciona o canvas
         self.frame_tabuleiro = None  
         self.criar_configuracao_inicial()
 
+        # Torna a janela responsiva
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+
     def criar_configuracao_inicial(self):
         frame_config = tk.Frame(self.root)
-        frame_config.grid(row=0, column=0)
+        frame_config.grid(row=0, column=0, sticky="ew")
+
+        # Torna o frame_config também responsivo horizontalmente
+        frame_config.grid_columnconfigure(1, weight=1)
 
         # Entrada para o tamanho do tabuleiro
-        tk.Label(frame_config, text="Tamanho do Tabuleiro:").grid(row=0, column=0)
+        tk.Label(frame_config, text="Tamanho do Tabuleiro:").grid(row=0, column=0, sticky="w")
         self.tamanho_input = tk.Entry(frame_config)
-        self.tamanho_input.grid(row=0, column=1)
+        self.tamanho_input.grid(row=0, column=1, sticky="ew")
         self.tamanho_input.insert(0, "10")
 
         # Entrada para o número de torres
-        tk.Label(frame_config, text="Número de Torres:").grid(row=1, column=0)
+        tk.Label(frame_config, text="Número de Torres:").grid(row=1, column=0, sticky="w")
         self.torres_input = tk.Entry(frame_config)
-        self.torres_input.grid(row=1, column=1)
+        self.torres_input.grid(row=1, column=1, sticky="ew")
         self.torres_input.insert(0, "10")
 
         # Botão para iniciar o jogo
         botao_iniciar = tk.Button(frame_config, text="Iniciar Jogo", command=self.iniciar_jogo)
-        botao_iniciar.grid(row=2, column=0, columnspan=2)
+        botao_iniciar.grid(row=2, column=0, columnspan=2, sticky="ew")
 
     def iniciar_jogo(self):
         try:
@@ -130,9 +138,28 @@ class TowerDefenseInterface:
             self.frame_tabuleiro.destroy()
 
     def criar_tabuleiro(self):
-        self.frame_tabuleiro = tk.Frame(self.root)
-        self.frame_tabuleiro.grid(row=1, column=0)
+        # Cria um Canvas para adicionar o Frame do tabuleiro e barras de rolagem
+        self.canvas = tk.Canvas(self.root)
+        self.canvas.grid(row=1, column=0, sticky="nsew")
 
+        # Torna o Canvas expansível com a janela
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+
+        # Adiciona barras de rolagem
+        scrollbar_y = tk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
+        scrollbar_y.grid(row=1, column=1, sticky='ns')
+
+        scrollbar_x = tk.Scrollbar(self.root, orient="horizontal", command=self.canvas.xview)
+        scrollbar_x.grid(row=2, column=0, sticky='ew')
+
+        self.canvas.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+
+        # Cria o Frame para o tabuleiro dentro do Canvas
+        self.frame_tabuleiro = tk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.frame_tabuleiro, anchor='nw')
+
+        # Preenche o Frame do tabuleiro com os botões
         self.botao_matriz = [[None for _ in range(self.n)] for _ in range(self.n)]
         for i in range(self.n):
             for j in range(self.n):
@@ -145,7 +172,19 @@ class TowerDefenseInterface:
                 self.botao_matriz[i][j] = botao
 
         botao_calcular = tk.Button(self.root, text="Calcular Menor Dano", command=self.encontrar_menor_dano)
-        botao_calcular.grid(row=2, column=0)
+        botao_calcular.grid(row=3, column=0, sticky="ew")
+
+        # Atualiza o Canvas para ajustar a barra de rolagem com o tamanho do tabuleiro
+        self.frame_tabuleiro.update_idletasks()
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
+
+        # Ajusta o redimensionamento do frame de acordo com o tamanho da janela
+        self.canvas.bind('<Configure>', self.ajustar_frame)
+
+    def ajustar_frame(self, event):
+        # Ajusta a largura do FrameTabuleiro para se adaptar ao redimensionamento do Canvas
+        canvas_width = event.width
+        self.canvas.itemconfig(self.canvas.create_window((0, 0), window=self.frame_tabuleiro, anchor='nw'), width=canvas_width)
 
     def adicionar_torre(self, x, y):
         if self.jogo.tabuleiro[x][y] == 0:
@@ -185,7 +224,6 @@ class TowerDefenseInterface:
                     self.botao_matriz[x][y].config(bg="green", text=f"D: {self.jogo.matriz_dano[x][y]}")
             elapsed_time = time.time() - start_time
             cpu_usage = os.getloadavg()[0] if os.name != 'nt' else "Monitoramento indisponível no Windows"
-            # messagebox.showinfo("Resultado", f"Menor Dano: {menor_dano}\nTempo: {elapsed_time:.2f}s\nCPU: {cpu_usage}")
             messagebox.showinfo("Resultado", f"Menor Dano: {menor_dano}\nTempo: {elapsed_time:.2f}")
         except KeyError:
             messagebox.showerror("Erro", "Caminho não encontrado")
